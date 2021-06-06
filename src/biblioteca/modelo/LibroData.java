@@ -4,6 +4,8 @@ package biblioteca.modelo;
 import biblioteca.entidades.Autor;
 import biblioteca.entidades.Libro;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JOptionPane;
 
 public class LibroData {
@@ -70,35 +72,77 @@ public class LibroData {
         
     }   //FUNCIONA
      
-    public Libro buscarLibro(String nombre_libro){
-       String query = "SELECT * FROM libro WHERE nombre LIKE ?";
-       Libro libro = null;
+    public List<Libro> buscarLibro(String nombre_libro){
+        List<Libro> libros = new ArrayList<>();
+        String sql = "SELECT libro.id_libro,libro.id_autor, libro.ISBN,libro.nombre,libro.editorial,libro.año,libro.tipo,autor.nombre_autor,autor.apellido_autor,autor.dni_autor,autor.fech_nac,autor.nacionalidad FROM libro,autor WHERE libro.id_autor=autor.id_autor AND libro.nombre LIKE ?";
+        String nombreDeLibro = "%"+nombre_libro+"%";
         
         try {
-            PreparedStatement ps = con.prepareStatement(query);
+            PreparedStatement ps = con.prepareStatement(sql);
             
-            ps.setString(1, nombre_libro + "%");
+            ps.setString(1, nombreDeLibro);
             
             ResultSet rs = ps.executeQuery();
             
-            if(rs.next()){//Se busca UN libro.
-                libro = new Libro();
-                libro.setId_libro(rs.getInt(1));
+            while(rs.next()){
+                Libro libro = new Libro();
                 Autor autor = new Autor();
+                autor.setId_autor(rs.getInt("id_autor"));
+                autor.setApellidoAutor(rs.getString("apellido_autor"));
+                autor.setDni(rs.getInt("dni_autor"));
+                autor.setNombreAutor(rs.getString("nombre_autor"));
+                autor.setFecha_nac(rs.getDate("fech_nac").toLocalDate());
+                autor.setNacionalidad(rs.getString("nacionalidad"));
                 libro.setAutor(autor);
-                libro.getAutor().setId_autor(rs.getInt(2));
-                libro.setISBN(rs.getInt(3));
-                libro.setNombre(rs.getString(4));
-                libro.setEditorial(rs.getString(5));
-                libro.setAño(rs.getInt(6));
-                libro.setTipo(rs.getString(7));
-            }else{
-                JOptionPane.showMessageDialog(null, "No se ha encontrado ese libro");
+                libro.setId_libro(rs.getInt("id_libro"));
+                libro.setISBN(rs.getInt("ISBN"));
+                libro.setNombre(rs.getString("nombre"));
+                libro.setEditorial(rs.getString("editorial"));
+                libro.setAño(rs.getInt("año"));
+                libro.setTipo(rs.getString("tipo"));
+                libros.add(libro);
             }
+            ps.close();
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, "Error al buscar el libro: " + ex.getMessage());
+            JOptionPane.showMessageDialog(null, "Error al buscar libro: " + ex.getMessage());
         }
         
-        return libro;
+        return libros;
+    }
+    
+    public List<Libro> obtenerLibros(){
+        List<Libro> listaDeLibros = new ArrayList();
+        String sql = "SELECT libro.id_libro,libro.id_autor, libro.ISBN,libro.nombre,libro.editorial,libro.año,libro.tipo,autor.nombre_autor,autor.apellido_autor,autor.dni_autor,autor.fech_nac,autor.nacionalidad FROM libro,autor WHERE libro.id_autor=autor.id_autor ";
+        
+        try {
+            PreparedStatement ps = con.prepareStatement(sql);
+            
+            ResultSet rs = ps.executeQuery();
+            
+            while(rs.next()){
+                Libro libro = new Libro();
+                Autor autor=new Autor();
+                autor.setId_autor(rs.getInt("id_autor"));
+                autor.setApellidoAutor(rs.getString("apellido_autor"));
+                autor.setDni(rs.getInt("dni_autor"));
+                autor.setNombreAutor(rs.getString("nombre_autor"));
+                autor.setFecha_nac(rs.getDate("fech_nac").toLocalDate());
+                autor.setNacionalidad(rs.getString("nacionalidad"));
+                libro.setAutor(autor);
+                libro.setId_libro(rs.getInt("id_libro"));
+                libro.setISBN(rs.getInt("ISBN"));
+                libro.setNombre(rs.getString("nombre"));
+                libro.setEditorial(rs.getString("editorial"));
+                libro.setAño(rs.getInt("año"));
+                libro.setTipo(rs.getString("tipo"));
+                listaDeLibros.add(libro);
+            }
+            ps.close();
+            JOptionPane.showMessageDialog(null, "Lista de libros en base de datos");
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Error al obtener los libros: " + ex.getMessage());
+        }
+        
+        return listaDeLibros;
     }
 }

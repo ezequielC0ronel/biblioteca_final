@@ -56,7 +56,7 @@ public class PrestamoData {
                     prestamo.setIdPrestamo(rs.getInt(1));
 //                Conexion conex = new Conexion();
 //                EjemplarData ed = new EjemplarData(conex);
-                    ed.actualizarEstadoEjemplar(prestamo.getEjemplar(), "Prestado");
+                    ed.actualizarEstado(prestamo.getEjemplar(), "Prestado");
                     JOptionPane.showMessageDialog(null, "El prestamo se ha registrado con exito!");
                 } else {
                     JOptionPane.showMessageDialog(null, "No se pudo obtener el id del prestamo.");
@@ -98,7 +98,7 @@ public class PrestamoData {
                 md.fechaFinal(prestamo.getIdPrestamo(), LocalDate.now());
             }
 
-            ed.actualizarEstadoEjemplar(prestamo.getEjemplar(), "Disponible");
+            ed.actualizarEstado(prestamo.getEjemplar(), "Disponible");
 
             ps.close();
         } catch (SQLException ex) {
@@ -120,7 +120,7 @@ public class PrestamoData {
 
             JOptionPane.showMessageDialog(null, "Se ha anulado su prestamo!");
 
-            ed.actualizarEstadoEjemplar(prestamo.getEjemplar(), "Disponible");
+            ed.actualizarEstado(prestamo.getEjemplar(), "Disponible");
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Error al anular un prestamo: " + ex.getMessage());
         }
