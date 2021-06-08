@@ -12,11 +12,9 @@ import javax.swing.JOptionPane;
 
 public class LectorData {
     private Connection con;
-    private PrestamoData pd;
     
     public LectorData(Conexion c){
         con = c.getConnection();
-        pd = new PrestamoData(c);
     }
     
     public void agregarLector (Lector lector){
@@ -124,6 +122,7 @@ public class LectorData {
         
     }//funciona 
     
+    //Si contiene una multa con mas de 90 dias de retraso, se cambia el estado del lector a inactivo.
     public void chequeoEstadoLector(){
         String sql = "SELECT multa.id_prestamo, fecha_inicio FROM multa, prestamos WHERE multa.id_prestamo = prestamo.id_prestamo";
         TreeMap <Integer,LocalDate> aux = new TreeMap<>();
@@ -142,6 +141,8 @@ public class LectorData {
                 long esp = ChronoUnit.DAYS.between(aux.get(it), LocalDate.now());
                 System.out.println(esp);
                 if(esp > 90){
+                    Conexion conex = new Conexion();
+                    PrestamoData pd = new PrestamoData(conex);
                     Prestamo preAux = pd.buscarPrestamo(it);
                     cambiarEstadoLector(preAux.getLector().getId_lector(), false);
                 }
