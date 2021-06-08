@@ -13,13 +13,9 @@ import javax.swing.JOptionPane;
 public class EjemplarData {
 
     private Connection con;
-    private PrestamoData pd;
-    private MultaData md;
     
     public EjemplarData(Conexion c) {
         con = c.getConnection();
-        pd = new PrestamoData(c);
-        md = new MultaData(c);
     }
 
     public void agregarEjemplares(Ejemplar ejemplar, int cant) {
@@ -118,8 +114,11 @@ public class EjemplarData {
             while (rs.next()) {
                 int i = (int) ChronoUnit.DAYS.between(rs.getDate(2).toLocalDate(), LocalDate.now());
                 if (i > 30) {
+                    Conexion conex = new Conexion();
+                    PrestamoData pd = new PrestamoData(conex);
                     Prestamo prestamo = pd.buscarPrestamo(rs.getInt(1));
                     actualizarEstado(prestamo.getEjemplar(), "Retraso");
+                    MultaData md = new MultaData(conex);
                     Multa multa = new Multa(prestamo, LocalDate.now());
                     md.agregarMulta(multa);
                 }
@@ -127,7 +126,7 @@ public class EjemplarData {
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Error al chequear el estado del ejemplar: " + ex.getMessage());
         }
-    }
+    }//Boton para refrescar estado de los ejemplares.
 
     public String estadoEjemplar(int id_ejemplar) {//Retorna un string con el estado que tiene el ejemplar.
         String sql = "SELECT estado FROM ejemplar WHERE id_ejemplar = ?";
