@@ -24,20 +24,16 @@ import javax.swing.JOptionPane;
 public class PrestamoData {
 
     private Connection con;
-    private EjemplarData ed;
-    private MultaData md;
 
     public PrestamoData(Conexion c) {
         con = c.getConnection();
-        ed = new EjemplarData(c);
-        md = new MultaData(c);
     }
 
     public void registrarPrestamo(Prestamo prestamo) {
         String sql = "INSERT INTO prestamos (id_lector, id_ejemplar, estado, fecha_prestamo) VALUES (?, ?, ?, ?)";
-        boolean porFecha = md.prestamoXFecha(prestamo.getLector().getId_lector());
+        boolean porFecha = prestamosXFecha(prestamo.getLector().getId_lector());
         boolean limite = limitePrestados(prestamo.getLector().getId_lector());
-        boolean ejemplarDispo = ed.ejemplarDisponible(prestamo.getEjemplar().getId_ejemplar());
+        boolean ejemplarDispo = ejemDisponible(prestamo.getEjemplar().getId_ejemplar());
         boolean taActivo = lectorActivo(prestamo.getLector().getId_lector());
 
         try {
@@ -48,29 +44,30 @@ public class PrestamoData {
                 ps.setInt(1, prestamo.getLector().getId_lector());
                 ps.setInt(2, prestamo.getEjemplar().getId_ejemplar());
                 ps.setBoolean(3, prestamo.getEstado());//No deberia ser siempre true cada vez que se inicia un nuevo prestamo?
-                ps.setDate(3, Date.valueOf(prestamo.getFecha_prestamo()));
+                ps.setDate(4, Date.valueOf(prestamo.getFecha_prestamo()));
 
                 ps.executeUpdate();
                 ResultSet rs = ps.getGeneratedKeys();
                 if (rs.next()) {
                     prestamo.setIdPrestamo(rs.getInt(1));
-//                Conexion conex = new Conexion();
-//                EjemplarData ed = new EjemplarData(conex);
+
+                    Conexion conex = new Conexion();
+                    EjemplarData ed = new EjemplarData(conex);
                     ed.actualizarEstado(prestamo.getEjemplar(), "Prestado");
                     JOptionPane.showMessageDialog(null, "El prestamo se ha registrado con exito!");
                 } else {
                     JOptionPane.showMessageDialog(null, "No se pudo obtener el id del prestamo.");
                 }
-            }else{
-                if(!ejemplarDispo){
+            } else {
+                if (!ejemplarDispo) {
                     JOptionPane.showMessageDialog(null, "El ejemplar no se encuentra disponible!");
-                }else if(limite && !porFecha){
+                } else if (limite && !porFecha) {
                     JOptionPane.showMessageDialog(null, "Usted adeuda 3 libros y tiene multas activas!");
-                }else if(limite){
+                } else if (limite) {
                     JOptionPane.showMessageDialog(null, "Usted ya adeuda 3 libros!");
-                }else if(!porFecha){
+                } else if (!porFecha) {
                     JOptionPane.showMessageDialog(null, "Usted tiene multas!");
-                }else if(!taActivo){
+                } else if (!taActivo) {
                     JOptionPane.showMessageDialog(null, "Usted ha sido dado de baja, regularice su situacion!");
                 }
             }
@@ -92,8 +89,12 @@ public class PrestamoData {
             ps.executeUpdate();
 
             JOptionPane.showMessageDialog(null, "Se ha entregado su prestamo!");
-
+            
+            Conexion conex = new Conexion();
+            EjemplarData ed = new EjemplarData(conex);
+  
             if ("Retraso".equals(ed.estadoEjemplar(prestamo.getEjemplar().getId_ejemplar()))) {
+                MultaData md = new MultaData(conex);
                 //FALTA CALCULAR LA FECHA FIN DE LA MULTA.
                 md.fechaFinal(prestamo.getIdPrestamo(), LocalDate.now());
             }
@@ -119,15 +120,31 @@ public class PrestamoData {
             ps.close();
 
             JOptionPane.showMessageDialog(null, "Se ha anulado su prestamo!");
-
+            
+            Conexion conex = new Conexion();
+            EjemplarData ed = new EjemplarData(conex);
             ed.actualizarEstado(prestamo.getEjemplar(), "Disponible");
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Error al anular un prestamo: " + ex.getMessage());
         }
     }
 
+    public boolean ejemDisponible(int id_ejemplar) {
+        Conexion conex = new Conexion();
+        EjemplarData ed = new EjemplarData(conex);
+
+        return ed.ejemplarDisponible(id_ejemplar);
+    }
+
+    public boolean prestamosXFecha(int id_lector) {
+        Conexion conex = new Conexion();
+        MultaData md = new MultaData(conex);
+
+        return md.prestamoXFecha(id_lector);
+    }
+
     public boolean limitePrestados(int id_lector) {
-        String sql = "SELECT id_lector FROM prestamo WHERE prestamos.id_lector = ? AND estado = 1";
+        String sql = "SELECT id_lector FROM prestamos WHERE prestamos.id_lector = ? AND estado = 1";
         int i = 0;
         boolean limite = false;
         try {
@@ -151,7 +168,7 @@ public class PrestamoData {
     }
 
     public boolean lectorActivo(int id_lector) {
-        String sql = "SELECT estado_lector FROM prestamos WHERE id_lector = ?";
+        String sql = "SELECT estado_lector FROM lector WHERE id_lector = ?";
         boolean lActivo = true;
 
         try {
